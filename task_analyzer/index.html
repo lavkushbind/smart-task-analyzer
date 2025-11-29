@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Task Analyzer Pro</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root { --primary: #4f46e5; --bg: #f8fafc; --text: #1e293b; --card: #ffffff; }
+        body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 0; }
+        
+        .navbar { background: white; padding: 15px 5%; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; }
+        .navbar h1 { margin: 0; font-size: 1.2rem; color: var(--primary); display: flex; align-items: center; gap: 8px; }
+
+        .container { max-width: 1200px; margin: 30px auto; padding: 0 20px; display: grid; grid-template-columns: 1fr 1.5fr; gap: 30px; }
+        
+        /* Input Section */
+        .card { background: var(--card); border-radius: 12px; padding: 25px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
+        textarea { width: 100%; height: 300px; padding: 15px; border: 2px solid #e2e8f0; border-radius: 8px; font-family: 'Consolas', monospace; font-size: 13px; box-sizing: border-box; resize: none; background: #f8fafc; }
+        textarea:focus { outline: none; border-color: var(--primary); background: white; }
+        
+        .btn-primary { width: 100%; background: var(--primary); color: white; border: none; padding: 12px; border-radius: 8px; font-weight: 600; cursor: pointer; margin-top: 15px; transition: 0.2s; }
+        .btn-primary:hover { background: #4338ca; transform: translateY(-2px); }
+
+        /* Output Section */
+        .filters { display: flex; gap: 10px; margin-bottom: 20px; }
+        .filter-btn { background: white; border: 1px solid #e2e8f0; padding: 8px 16px; border-radius: 20px; cursor: pointer; font-size: 0.9rem; color: #64748b; transition: 0.2s; }
+        .filter-btn.active { background: var(--primary); color: white; border-color: var(--primary); }
+        .filter-btn:hover:not(.active) { background: #f1f5f9; }
+
+        .task-list { display: flex; flex-direction: column; gap: 15px; }
+        
+        .task-card { background: white; padding: 20px; border-radius: 12px; border-left: 5px solid #cbd5e1; box-shadow: 0 2px 4px rgba(0,0,0,0.05); display: flex; justify-content: space-between; align-items: center; transition: all 0.3s ease; }
+        .task-card:hover { transform: translateX(5px); box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); }
+
+        .task-content h3 { margin: 0 0 5px 0; font-size: 1.1rem; }
+        .explanation { font-size: 0.85rem; color: #64748b; margin-bottom: 10px; display: flex; align-items: center; gap: 5px; }
+        
+        .meta-tags { display: flex; gap: 10px; margin-top: 10px; font-size: 0.85rem; color: #475569; }
+        .meta-tags span { background: #f1f5f9; padding: 4px 10px; border-radius: 6px; }
+
+        .score-circle { width: 50px; height: 50px; border-radius: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center; background: #f8fafc; font-weight: bold; font-size: 1.2rem; }
+        .score-sub { font-size: 0.6rem; text-transform: uppercase; color: #94a3b8; }
+
+        /* Priority Colors */
+        .border-red { border-left-color: #ef4444; }
+        .text-red { color: #ef4444; }
+        .border-orange { border-left-color: #f59e0b; }
+        .text-orange { color: #f59e0b; }
+        .border-green { border-left-color: #10b981; }
+        .text-green { color: #10b981; }
+
+        @media (max-width: 768px) { .container { grid-template-columns: 1fr; } }
+    </style>
+</head>
+<body>
+
+    <nav class="navbar">
+        <h1>🚀 Smart Task Analyzer <span style="font-size: 0.8rem; background: #e0e7ff; color: #4f46e5; padding: 4px 8px; border-radius: 10px;">PRO v2.0</span></h1>
+    </nav>
+
+    <div class="container">
+        <!-- Input Side -->
+        <div class="input-section">
+            <div class="card">
+                <h3 style="margin-top: 0;">📋 Task Data (JSON)</h3>
+                <textarea id="jsonInput"></textarea>
+                <button class="btn-primary" onclick="fetchTasks()">Analyze Priorities</button>
+            </div>
+        </div>
+
+        <!-- Output Side -->
+        <div class="output-section">
+            <div class="filters">
+                <button class="filter-btn active" onclick="applyFilter('smart', this)">🧠 Smart Balance</button>
+                <button class="filter-btn" onclick="applyFilter('deadline', this)">📅 Deadline First</button>
+                <button class="filter-btn" onclick="applyFilter('quick', this)">⚡ Quick Wins</button>
+                <button class="filter-btn" onclick="applyFilter('important', this)">⭐ High Impact</button>
+            </div>
+            
+            <div id="taskList" class="task-list">
+                <div style="text-align: center; color: #94a3b8; margin-top: 50px;">
+                    Ready to optimize your workflow. Click Analyze.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Sample Data
+        const sampleData = [
+            { "title": "Fix Critical Production Bug", "due_date": "2023-11-20", "estimated_hours": 5, "importance": 10 },
+            { "title": "Update Logo", "due_date": "2025-12-25", "estimated_hours": 1, "importance": 3 },
+            { "title": "Client Meeting", "due_date": "2025-12-01", "estimated_hours": 2, "importance": 8 },
+            { "title": "Write Documentation", "due_date": "2025-11-30", "estimated_hours": 4, "importance": 6 }
+        ];
+        document.getElementById('jsonInput').value = JSON.stringify(sampleData, null, 4);
+
+        let currentTasks = [];
+
+        async function fetchTasks() {
+            const input = document.getElementById('jsonInput').value;
+            const list = document.getElementById('taskList');
+            list.innerHTML = '<p style="text-align:center;">Processing Algorithm...</p>';
+
+            try {
+                const response = await fetch('http://127.0.0.1:8000/api/tasks/analyze/', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: input
+                });
+                currentTasks = await response.json();
+                renderTasks(currentTasks);
+            } catch (e) {
+                list.innerHTML = `<p style="color:red; text-align:center;">Error: Check Server or JSON</p>`;
+            }
+        }
+
+        function renderTasks(tasks) {
+            const list = document.getElementById('taskList');
+            list.innerHTML = '';
+            
+            tasks.forEach(task => {
+                let colorClass = 'border-green';
+                let textClass = 'text-green';
+                
+                if (task.score >= 100) { colorClass = 'border-red'; textClass = 'text-red'; }
+                else if (task.score >= 50) { colorClass = 'border-orange'; textClass = 'text-orange'; }
+
+                list.innerHTML += `
+                    <div class="task-card ${colorClass}">
+                        <div class="task-content">
+                            <h3>${task.title}</h3>
+                            <div class="explanation">
+                                💡 Analysis: ${task.explanation}
+                            </div>
+                            <div class="meta-tags">
+                                <span>📅 ${task.due_date}</span>
+                                <span>⭐ Imp: ${task.importance}</span>
+                                <span>⏳ ${task.estimated_hours}h</span>
+                            </div>
+                        </div>
+                        <div class="score-circle">
+                            <span class="${textClass}">${Math.round(task.score)}</span>
+                            <span class="score-sub">Score</span>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        function applyFilter(type, btn) {
+            // Update active button
+            document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+
+            let sorted = [...currentTasks];
+            
+            if (type === 'smart') {
+                sorted.sort((a, b) => b.score - a.score);
+            } else if (type === 'deadline') {
+                sorted.sort((a, b) => new Date(a.due_date) - new Date(b.due_date));
+            } else if (type === 'quick') {
+                sorted.sort((a, b) => a.estimated_hours - b.estimated_hours);
+            } else if (type === 'important') {
+                sorted.sort((a, b) => b.importance - a.importance);
+            }
+            
+            renderTasks(sorted);
+        }
+    </script>
+</body>
+</html>
