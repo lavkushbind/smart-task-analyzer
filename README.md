@@ -1,8 +1,11 @@
 # Smart Task Analyzer 🧠
 
-An intelligent task management system that prioritizes your work based on Urgency, Importance, and Effort.
+A Django-based intelligent task management system that automatically prioritizes tasks based on Urgency, Importance, and Effort metrics.
 
-## 🚀 Setup Instructions
-1. Install dependencies:
+## 🛠️ Setup Instructions
+
+1. **Clone the repository:**
    ```bash
-   pip install django djangorestframework django-cors-headers
+   git clone git clone https://github.com/lavkushbind/smart-task-analyzer.git
+
+   cd smart-task-analyzer/backend
